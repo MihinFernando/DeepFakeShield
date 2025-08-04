@@ -1,0 +1,6 @@
+/* src/index.css */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f8f9fa; /* Bootstrap light gray background */
+}
