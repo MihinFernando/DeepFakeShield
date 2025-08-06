@@ -1,18 +1,24 @@
+// src/components/Dashboard.js
+
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { Container, Button, Form, Card, Spinner, Image } from 'react-bootstrap';
+import History from './History';
+import '../App.css'; // Your custom neon styles
 
 const Dashboard = ({ user }) => {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Handle image selection
   const handleImageChange = (e) => {
     setImage(e.target.files[0]);
-    setResult(null); // Reset previous result
+    setResult(null);
   };
 
+  // Upload image and get prediction
   const handleUpload = async () => {
     if (!image) return alert("Please select an image");
 
@@ -20,7 +26,8 @@ const Dashboard = ({ user }) => {
     setResult(null);
 
     const formData = new FormData();
-    formData.append('file', image); // Must match backend key
+    formData.append('file', image);
+    if (user) formData.append('userId', user.uid); // Send userId for history
 
     try {
       const res = await fetch('http://localhost:5000/scan', {
@@ -43,26 +50,25 @@ const Dashboard = ({ user }) => {
   };
 
   return (
-    <Container className="py-5 text-light">
-      <Card style={{ backgroundColor: '#2e2e3e', border: 'none' }} className="p-4">
-        <h3 className="mb-4 text-center">
-          Welcome, {user.displayName || user.email}
-        </h3>
+    <Container className="py-5 text-light d-flex flex-column align-items-center">
+      <Card className="custom-card p-4">
+        <h2 className="text-glow text-center mb-2">DeepFakeShield</h2>
+        <p className="text-center text-muted">AI-Generated Image Detection & Harm Prevention</p>
 
-        <Form.Group controlId="formFile" className="mb-3">
-          <Form.Label>Select an image to analyze</Form.Label>
+        <Form.Group controlId="formFile" className="mb-3 mt-4">
           <Form.Control type="file" onChange={handleImageChange} />
         </Form.Group>
 
         <Button
-          variant="success"
-          className="mb-3"
+          variant="primary"
+          className="mb-3 scan-btn"
           onClick={handleUpload}
           disabled={loading}
         >
-          {loading ? <Spinner animation="border" size="sm" /> : "Analyze Image"}
+          {loading ? <Spinner animation="border" size="sm" /> : 'Scan Image'}
         </Button>
 
+        {/* Show selected image preview */}
         {image && (
           <div className="mb-3 text-center">
             <Image
@@ -74,22 +80,39 @@ const Dashboard = ({ user }) => {
           </div>
         )}
 
+        {/* Show prediction result */}
         {result && (
           <div className="mt-4 text-center">
-            <h5>Detection Result:</h5>
-          <p>{result.label === 'fake' ? '🧠 AI-Generated' : '📷 Real Image'}</p>
-
-<p>Confidence: <strong>{(result.confidence * 100).toFixed(2)}%</strong></p>
-
+            <h5 className="fw-bold text-light">Scan Result:</h5>
+            <p className="mb-1">
+              <span className="fw-bold" style={{ color: '#ff2d75' }}>
+                Prediction:
+              </span>{' '}
+              <span style={{ color: '#ff2d75' }}>
+                {result.label === 'fake' ? 'AI-generated' : 'Real Image'}
+              </span>
+            </p>
+            <p className="mb-1">
+              <span className="fw-bold text-info">Confidence:</span>{' '}
+              <span className="text-light">
+                {(result.confidence * 100).toFixed(2)}%
+              </span>
+            </p>
           </div>
         )}
 
+        {/* Logout Button */}
         <div className="text-center mt-4">
-          <Button variant="outline-light" onClick={() => signOut(auth)}>
+          <Button variant="outline-info" onClick={() => signOut(auth)}>
             Logout
           </Button>
         </div>
       </Card>
+
+      {/* History Component */}
+      <div className="mt-5 w-100">
+        <History user={user} />
+      </div>
     </Container>
   );
 };
