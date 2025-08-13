@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1052171112902",
+    "project_id": "deepfakeshield-604c7",
+    "storage_bucket": "deepfakeshield-604c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052171112902:android:7e5d601d0aef74261862c7",
+        "android_client_info": {
+          "package_name": "com.example.deepfakemobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1052171112902-llh6c5d1bpeutiv2jh7kfplfsso09odu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.deepfakemobile",
+            "certificate_hash": "aeec131fd953852103147a64815eb17e062914b9"
+          }
+        },
+        {
+          "client_id": "1052171112902-pcdqqqf2a8o0ufjtq38qpot441rsacdh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbFgsPkTbup1zbX0pNmNgJXKUBQDHGQow"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1052171112902-pcdqqqf2a8o0ufjtq38qpot441rsacdh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

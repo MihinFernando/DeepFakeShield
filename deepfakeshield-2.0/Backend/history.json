@@ -1,0 +1,116 @@
+{
+  "ZgDEpjus6HgV6Qwej1Mdab2IGB53": [
+    {
+      "filename": "PIC.jpg",
+      "timestamp": "2025-08-04 20:36:49",
+      "label": "fake",
+      "confidence": 0.9595
+    },
+    {
+      "filename": "WhatsApp_Image_2025-07-19_at_11.58.57_71033510.jpg",
+      "timestamp": "2025-08-04 20:37:17",
+      "label": "real",
+      "confidence": 0.9186
+    },
+    {
+      "filename": "WhatsApp_Image_2025-07-05_at_09.37.19_532714bb.jpg",
+      "timestamp": "2025-08-04 20:58:51",
+      "label": "real",
+      "confidence": 0.5045
+    },
+    {
+      "filename": "PIC.jpg",
+      "timestamp": "2025-08-04 21:00:43",
+      "label": "fake",
+      "confidence": 0.9595
+    },
+    {
+      "filename": "WhatsApp_Image_2025-07-12_at_10.16.10_fef64ea8.jpg",
+      "timestamp": "2025-08-04 21:01:42",
+      "label": "fake",
+      "confidence": 0.5281
+    }
+  ],
+  "VS7zfMVvZWYav7J6mWzn1Fop0uh1": [
+    {
+      "filename": "PIC.jpg",
+      "timestamp": "2025-08-06 20:10:48",
+      "label": "fake",
+      "confidence": 0.9595
+    },
+    {
+      "filename": "WhatsApp_Image_2025-07-19_at_11.58.57_71033510.jpg",
+      "timestamp": "2025-08-06 20:11:09",
+      "label": "real",
+      "confidence": 0.9186
+    }
+  ],
+  "wuDmlbhfV4dbsTJal2B7ra7ltg82": [
+    {
+      "filename": "ai.jpg",
+      "timestamp": "2025-08-08 11:49:28",
+      "label": "real",
+      "confidence": 0.6255
+    },
+    {
+      "filename": "hotel.jpg",
+      "timestamp": "2025-08-08 11:49:50",
+      "label": "fake",
+      "confidence": 0.768
+    },
+    {
+      "filename": "hotel.jpg",
+      "timestamp": "2025-08-08 11:49:53",
+      "label": "fake",
+      "confidence": 0.768
+    },
+    {
+      "filename": "ai_image.png",
+      "timestamp": "2025-08-08 11:50:07",
+      "label": "fake",
+      "confidence": 0.6532
+    },
+    {
+      "filename": "ai_image.png",
+      "timestamp": "2025-08-08 11:50:09",
+      "label": "fake",
+      "confidence": 0.6532
+    },
+    {
+      "filename": "hotel.jpg",
+      "timestamp": "2025-08-08 11:50:15",
+      "label": "fake",
+      "confidence": 0.768
+    },
+    {
+      "filename": "hotel.jpg",
+      "timestamp": "2025-08-08 11:50:16",
+      "label": "fake",
+      "confidence": 0.768
+    },
+    {
+      "filename": "mypic.jpg",
+      "timestamp": "2025-08-08 11:50:43",
+      "label": "real",
+      "confidence": 0.8329
+    },
+    {
+      "filename": "ai.jpg",
+      "timestamp": "2025-08-08 11:50:58",
+      "label": "real",
+      "confidence": 0.6255
+    },
+    {
+      "filename": "ai_image.png",
+      "timestamp": "2025-08-08 11:51:06",
+      "label": "fake",
+      "confidence": 0.6532
+    },
+    {
+      "filename": "hotel.jpg",
+      "timestamp": "2025-08-08 11:51:15",
+      "label": "fake",
+      "confidence": 0.768
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "DeepFakeShield Pro",
+  "version": "1.1",
+  "description": "Professional deepfake detection tool",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*",
+    "https://yourwebsite.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
