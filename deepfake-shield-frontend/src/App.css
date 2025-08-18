@@ -26,3 +26,93 @@ body {
 .scan-btn:hover {
   background-color: #00aacc;
 }
+.custom-card {
+  background-color: #13131a;
+  border-radius: 20px;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+.text-glow {
+  color: #00ffff;
+  text-shadow: 0 0 8px #00ffff;
+  font-weight: bold;
+}
+.scan-btn {
+  background-color: #00cfff;
+  border: none;
+  color: #fff;
+}
+.scan-btn:hover { background-color: #00aacc; }
+/* improve readability on dark */
+.text-light-muted { color: #c7d1db; }
+
+.kpi-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 204, 255, 0.25);
+  border-radius: 14px;
+  padding: 12px 10px;
+}
+.kpi-title { color: #c7d1db; font-weight: 600; }
+.kpi-value { color: #e6edf3; font-size: 1.25rem; font-weight: 700; }
+
+.chart-wrap {
+  height: 320px;            /* gives the donut good space */
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* --- Dropzone --- */
+.dropzone {
+  background: rgba(255,255,255,0.03);
+  border: 2px dashed rgba(0, 204, 255, 0.35);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 160ms ease;
+  min-height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropzone:hover {
+  border-color: rgba(0, 204, 255, 0.8);
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.18);
+}
+
+.dropzone.active {
+  border-color: #00ffff;
+  box-shadow: 0 0 24px rgba(0, 255, 255, 0.28);
+}
+
+.dropzone.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropzone-empty .dz-icon {
+  font-size: 2rem;
+  margin-bottom: 6px;
+}
+.dropzone-empty .dz-title {
+  color: #e6edf3;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.dropzone-empty .dz-sub {
+  color: #c7d1db;
+}
+.dropzone-empty .dz-hint {
+  color: #9fb2c5;
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
+.dropzone-preview img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 10px;
+}
