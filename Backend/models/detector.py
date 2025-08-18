@@ -6,12 +6,12 @@ model_name = "prithivMLmods/deepfake-detector-model-v1"
 model = SiglipForImageClassification.from_pretrained(model_name)
 processor = AutoImageProcessor.from_pretrained(model_name)
  
-# ✅ Add this to check how labels are mapped
-print("🧠 Model labels:", model.config.id2label)
+# Add this to check how labels are mapped
+print("Model labels:", model.config.id2label)
 
 def detect_image(image_path):
-    image = Image.open(image_path).convert("RGB")  # ❌ Remove resize here
-    inputs = processor(images=image, return_tensors="pt")  # ✅ Let processor handle it
+    image = Image.open(image_path).convert("RGB")  # Remove resize here
+    inputs = processor(images=image, return_tensors="pt")  # Let processor handle it
 
     with torch.no_grad():
         outputs = model(**inputs)
@@ -23,7 +23,7 @@ def detect_image(image_path):
     label = model.config.id2label[pred_idx].lower()
     confidence = round(probs[pred_idx], 4)
 
-    print(f"✅ Prediction: {label} ({confidence * 100:.2f}%)")
+    print(f" Prediction: {label} ({confidence * 100:.2f}%)")
 
     return {
         "label": label,
