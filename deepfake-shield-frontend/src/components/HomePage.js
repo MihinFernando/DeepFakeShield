@@ -107,13 +107,6 @@ const HomePage = ({ user }) => {
       {/* Navigation Bar */}
       <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
         <Navbar.Brand href="#home" className="text-glow">
-          <img
-            src="/logo.png"
-            width="30"
-            height="30"
-            className="d-inline-block align-top me-2"
-            alt="DeepFakeShield Logo"
-          />
           DeepFakeShield
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -136,14 +129,14 @@ const HomePage = ({ user }) => {
       <Container className="py-5 text-light d-flex flex-column align-items-center">
         <Card className="custom-card p-4">
           <h2 className="text-glow text-center mb-2">DeepFakeShield</h2>
-          <p className="text-center text-muted">AI-Generated Image Detection & Harm Prevention</p>
+          <p className="text-center text-glow">AI-Generated Image Detection & Harm Prevention</p>
           
           {!user && (
             <div className="scans-counter text-center mb-3">
               <span className="badge bg-info">
                 {scansLeft} Free Scan{scansLeft !== 1 ? 's' : ''} Left
               </span>
-              <p className="small text-muted mt-1">
+              <p className="small text-light mt-1">
                 Sign up for unlimited scans and history tracking
               </p>
             </div>
@@ -181,21 +174,21 @@ const HomePage = ({ user }) => {
             <div className="feature-card text-center p-4">
               <div className="feature-icon mb-3">🔍</div>
               <h5>Advanced Detection</h5>
-              <p className="text-muted">Uses cutting-edge AI models to detect AI-generated images with high accuracy.</p>
+              <p className="text-light">Uses cutting-edge AI models to detect AI-generated images with high accuracy.</p>
             </div>
           </div>
           <div className="col-md-4 mb-4">
             <div className="feature-card text-center p-4">
               <div className="feature-icon mb-3">📊</div>
               <h5>Detailed Analysis</h5>
-              <p className="text-muted">Get confidence scores and detailed insights about your image authenticity.</p>
+              <p className="text-light">Get confidence scores and detailed insights about your image authenticity.</p>
             </div>
           </div>
           <div className="col-md-4 mb-4">
             <div className="feature-card text-center p-4">
               <div className="feature-icon mb-3">💾</div>
               <h5>History Tracking</h5>
-              <p className="text-muted">Save your scan history and track detection trends over time (requires account).</p>
+              <p className="text-light">Save your scan history and track detection trends over time (requires account).</p>
             </div>
           </div>
         </div>
@@ -207,22 +200,22 @@ const HomePage = ({ user }) => {
           <div className="row">
             <div className="col-md-4 mb-3">
               <h5>DeepFakeShield</h5>
-              <p className="text-muted">Protecting digital authenticity with advanced AI detection.</p>
+              <p className="text-light-muted">Protecting digital authenticity with advanced AI detection.</p>
             </div>
             <div className="col-md-2 mb-3">
               <h6>Resources</h6>
               <ul className="list-unstyled">
-                <li><a href="#faq" className="text-muted">FAQ</a></li>
-                <li><a href="#blog" className="text-muted">Blog</a></li>
-                <li><a href="#tutorials" className="text-muted">Tutorials</a></li>
+                <li><a href="#faq" className="text-light-muted">FAQ</a></li>
+                <li><a href="#blog" className="text-light-muted">Blog</a></li>
+                <li><a href="#tutorials" className="text-light-muted">Tutorials</a></li>
               </ul>
             </div>
             <div className="col-md-2 mb-3">
               <h6>Company</h6>
               <ul className="list-unstyled">
-                <li><a href="#about" className="text-muted">About Us</a></li>
-                <li><a href="#contact" className="text-muted">Contact</a></li>
-                <li><a href="#privacy" className="text-muted">Privacy Policy</a></li>
+                <li><a href="#about" className="text-light-muted">About Us</a></li>
+                <li><a href="#contact" className="text-light-muted">Contact</a></li>
+                <li><a href="#privacy" className="text-light-muted">Privacy Policy</a></li>
               </ul>
             </div>
             <div className="col-md-4 mb-3">
@@ -238,7 +231,7 @@ const HomePage = ({ user }) => {
             </div>
           </div>
           <hr className="my-4" />
-          <p className="text-center text-muted mb-0">
+          <p className="text-center text-light-muted mb-0">
             &copy; {new Date().getFullYear()} DeepFakeShield. All rights reserved.
           </p>
         </Container>

@@ -122,13 +122,6 @@ const Dashboard = ({ user }) => {
       {/* Navigation Bar */}
       <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
         <Navbar.Brand href="#home" className="text-glow">
-          <img
-            src="/logo.png"
-            width="30"
-            height="30"
-            className="d-inline-block align-top me-2"
-            alt="DeepFakeShield Logo"
-          />
           DeepFakeShield
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -151,7 +144,7 @@ const Dashboard = ({ user }) => {
     <Container className="py-5 text-light d-flex flex-column align-items-center">
       <Card className="custom-card p-4">
         <h2 className="text-glow text-center mb-2">DeepFakeShield</h2>
-        <p className="text-center text-muted">AI-Generated Image Detection & Harm Prevention</p>
+        <p className="text-center text-glow">AI-Generated Image Detection & Harm Prevention</p>
 
         {/* Modern drag-and-drop uploader */}
         <DropzoneUpload
@@ -182,6 +175,49 @@ const Dashboard = ({ user }) => {
         <History user={user} refreshKey={historyRefresh} /> {/* 👈 pass refreshKey */}
       </div>
     </Container>
+
+    {/* Footer */}
+      <footer className="bg-dark text-light py-4 mt-5">
+        <Container>
+          <div className="row">
+            <div className="col-md-4 mb-3">
+              <h5>DeepFakeShield</h5>
+              <p className="text-light-muted">Protecting digital authenticity with advanced AI detection.</p>
+            </div>
+            <div className="col-md-2 mb-3">
+              <h6>Resources</h6>
+              <ul className="list-unstyled">
+                <li><a href="#faq" className="text-light-muted">FAQ</a></li>
+                <li><a href="#blog" className="text-light-muted">Blog</a></li>
+                <li><a href="#tutorials" className="text-light-muted">Tutorials</a></li>
+              </ul>
+            </div>
+            <div className="col-md-2 mb-3">
+              <h6>Company</h6>
+              <ul className="list-unstyled">
+                <li><a href="#about" className="text-light-muted">About Us</a></li>
+                <li><a href="#contact" className="text-light-muted">Contact</a></li>
+                <li><a href="#privacy" className="text-light-muted">Privacy Policy</a></li>
+              </ul>
+            </div>
+            <div className="col-md-4 mb-3">
+              <h6>Subscribe to Our Newsletter</h6>
+              <div className="d-flex gap-2">
+                <input
+                  type="email"
+                  className="form-control form-control-sm"
+                  placeholder="Your email"
+                />
+                <button className="btn btn-sm btn-outline-light">Subscribe</button>
+              </div>
+            </div>
+          </div>
+          <hr className="my-4" />
+          <p className="text-center text-light-muted mb-0">
+            &copy; {new Date().getFullYear()} DeepFakeShield. All rights reserved.
+          </p>
+        </Container>
+      </footer>
     </>
   );
 };
