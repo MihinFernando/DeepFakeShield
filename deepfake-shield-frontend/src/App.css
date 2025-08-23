@@ -116,3 +116,60 @@ body {
   object-fit: contain;
   border-radius: 10px;
 }
+
+.scans-counter {
+  background: rgba(0, 204, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 204, 255, 0.15);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 204, 255, 0.1);
+  border-color: rgba(0, 204, 255, 0.3);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+}
+
+.result-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 204, 255, 0.2);
+}
+
+.confidence-meter {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+/* Navigation styles */
+.navbar-brand {
+  font-weight: 700;
+}
+
+/* Footer styles */
+footer a {
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+footer a:hover {
+  color: #00ffff !important;
+}

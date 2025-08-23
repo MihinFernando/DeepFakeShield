@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { Container, Button, Card, Spinner } from 'react-bootstrap';
+import { Container, Button, Card, Spinner, Navbar, Nav } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import History from './History';
 import DropzoneUpload from './DropzoneUpload';
 import '../App.css';
@@ -11,7 +12,8 @@ const Dashboard = ({ user }) => {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [historyRefresh, setHistoryRefresh] = useState(0); // 👈 NEW
+  const [historyRefresh, setHistoryRefresh] = useState(0);
+  const navigate = useNavigate();
 
   const handleUpload = async () => {
     if (!image) return alert('Please select an image');
@@ -30,7 +32,7 @@ const Dashboard = ({ user }) => {
       if (!res.ok) throw new Error(`Server returned status ${res.status}`);
       const data = await res.json();
       setResult(data);
-      setHistoryRefresh((v) => v + 1); // 👈 tell History to refetch
+      setHistoryRefresh((v) => v + 1);
     } catch (err) {
       alert('Failed to analyze image.');
       console.error('❌ Upload Error:', err);
@@ -116,6 +118,36 @@ const Dashboard = ({ user }) => {
   };
 
   return (
+    <>
+      {/* Navigation Bar */}
+      <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
+        <Navbar.Brand href="#home" className="text-glow">
+          <img
+            src="/logo.png"
+            width="30"
+            height="30"
+            className="d-inline-block align-top me-2"
+            alt="DeepFakeShield Logo"
+          />
+          DeepFakeShield
+        </Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
+          <Nav>
+            <Button 
+              variant="outline-light" 
+              className="me-2"
+              onClick={() => navigate('/')}
+            >
+              Home
+            </Button>
+            <Button variant="outline-info" onClick={() => signOut(auth)}>
+              Logout
+            </Button>
+          </Nav>
+        </Navbar.Collapse>
+      </Navbar>
+
     <Container className="py-5 text-light d-flex flex-column align-items-center">
       <Card className="custom-card p-4">
         <h2 className="text-glow text-center mb-2">DeepFakeShield</h2>
@@ -150,6 +182,7 @@ const Dashboard = ({ user }) => {
         <History user={user} refreshKey={historyRefresh} /> {/* 👈 pass refreshKey */}
       </div>
     </Container>
+    </>
   );
 };
 
