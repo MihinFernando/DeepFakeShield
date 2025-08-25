@@ -26,7 +26,5 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    # Run from the Backend folder:
-    #   cd Backend
-    #   python app.py
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
+

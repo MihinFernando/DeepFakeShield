@@ -6,10 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="e49126c0-07fa-43f8-9ed0-bdb4c259b0e4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/history.json" beforeDir="false" afterPath="$PROJECT_DIR$/history.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/detector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../deepfake-shield-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../deepfake-shield-frontend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../deepfake-shield-frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../deepfake-shield-frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
