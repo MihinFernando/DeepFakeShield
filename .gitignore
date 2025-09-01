@@ -1,3 +1,4 @@
+cat > .gitignore << 'EOF'
 # OS
 .DS_Store
 Thumbs.db
@@ -41,3 +42,4 @@ scan_uploads/
 **/google-services.json
 .env
 .env.*
+EOF
