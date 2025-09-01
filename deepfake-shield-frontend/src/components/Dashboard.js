@@ -6,13 +6,15 @@ import { Container, Button, Card, Spinner, Navbar, Nav } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import History from './History';
 import DropzoneUpload from './DropzoneUpload';
+import ReportModal from './ReportModal'; // 👈 NEW
 import '../App.css';
 
 const Dashboard = ({ user }) => {
-  const [image, setImage] = useState(null);
-  const [result, setResult] = useState(null);
+  const [image, setImage] = useState(null);      // File from uploader
+  const [result, setResult] = useState(null);    // Scan result from backend
   const [loading, setLoading] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  const [showReport, setShowReport] = useState(false); // 👈 NEW
   const navigate = useNavigate();
 
   const handleUpload = async () => {
@@ -41,7 +43,7 @@ const Dashboard = ({ user }) => {
     }
   };
 
-  // Watermark client-side (shown only when decision/label is "fake")
+  // Watermark client-side (only when decision/label is "fake")
   const downloadWatermarked = async () => {
     if (!image) return;
     const buf = await image.arrayBuffer();
@@ -85,8 +87,8 @@ const Dashboard = ({ user }) => {
   const renderResult = () => {
     if (!result) return null;
 
-    const conf = Number(result.confidence ?? 0); // 0..1
-    const raw = (result.label || '').toLowerCase(); // 'fake' | 'real'
+    const conf = Number(result.confidence ?? 0);               // 0..1
+    const raw = (result.label || '').toLowerCase();            // 'fake' | 'real'
     const decision = (result.decision || raw || '').toLowerCase();
     const isFake = decision === 'fake';
 
@@ -101,18 +103,22 @@ const Dashboard = ({ user }) => {
           </span>
         </p>
 
-        <p className="mb-1">
+        <p className="mb-3">
           <span className="fw-bold text-info">Confidence:</span>{' '}
           <span className="text-light">{(conf * 100).toFixed(2)}%</span>
         </p>
 
-        {isFake && (
-          <div className="mt-3">
+        <div className="d-flex justify-content-center gap-2">
+          {isFake && (
             <Button variant="outline-danger" onClick={downloadWatermarked}>
               Download Watermarked Image
             </Button>
-          </div>
-        )}
+          )}
+          {/* 👇 Always allow reporting after a scan */}
+          <Button variant="outline-warning" onClick={() => setShowReport(true)}>
+            Report this result
+          </Button>
+        </div>
       </div>
     );
   };
@@ -141,42 +147,42 @@ const Dashboard = ({ user }) => {
         </Navbar.Collapse>
       </Navbar>
 
-    <Container className="py-5 text-light d-flex flex-column align-items-center">
-      <Card className="custom-card p-4">
-        <h2 className="text-glow text-center mb-2">DeepFakeShield</h2>
-        <p className="text-center text-glow">AI-Generated Image Detection & Harm Prevention</p>
+      <Container className="py-5 text-light d-flex flex-column align-items-center">
+        <Card className="custom-card p-4">
+          <h2 className="text-glow text-center mb-2">DeepFakeShield</h2>
+          <p className="text-center text-glow">AI-Generated Image Detection & Harm Prevention</p>
 
-        {/* Modern drag-and-drop uploader */}
-        <DropzoneUpload
-          file={image}
-          onFileSelected={(f) => { setImage(f); setResult(null); }}
-          disabled={loading}
-        />
+          {/* Modern drag-and-drop uploader */}
+          <DropzoneUpload
+            file={image}
+            onFileSelected={(f) => { setImage(f); setResult(null); }}
+            disabled={loading}
+          />
 
-        <Button
-          variant="primary"
-          className="mt-3 scan-btn"
-          onClick={handleUpload}
-          disabled={loading || !image}
-        >
-          {loading ? <Spinner animation="border" size="sm" /> : 'Scan Image'}
-        </Button>
-
-        {renderResult()}
-
-        <div className="text-center mt-4">
-          <Button variant="outline-info" onClick={() => signOut(auth)}>
-            Logout
+          <Button
+            variant="primary"
+            className="mt-3 scan-btn"
+            onClick={handleUpload}
+            disabled={loading || !image}
+          >
+            {loading ? <Spinner animation="border" size="sm" /> : 'Scan Image'}
           </Button>
+
+          {renderResult()}
+
+          <div className="text-center mt-4">
+            <Button variant="outline-info" onClick={() => signOut(auth)}>
+              Logout
+            </Button>
+          </div>
+        </Card>
+
+        <div className="mt-5 w-100">
+          <History user={user} refreshKey={historyRefresh} /> {/* 👈 keep history refreshed */}
         </div>
-      </Card>
+      </Container>
 
-      <div className="mt-5 w-100">
-        <History user={user} refreshKey={historyRefresh} /> {/* 👈 pass refreshKey */}
-      </div>
-    </Container>
-
-    {/* Footer */}
+      {/* Footer */}
       <footer className="bg-dark text-light py-4 mt-5">
         <Container>
           <div className="row">
@@ -218,6 +224,15 @@ const Dashboard = ({ user }) => {
           </p>
         </Container>
       </footer>
+
+      {/* 👇 NEW: Report Modal instance */}
+      <ReportModal
+        show={showReport}
+        onClose={() => setShowReport(false)}
+        file={image}          // pass the uploaded File for "OK (save image & report)"
+        user={user}
+        lastScan={{ ...result, filename: image?.name }} // pass decision/confidence/threshold (+ filename)
+      />
     </>
   );
 };

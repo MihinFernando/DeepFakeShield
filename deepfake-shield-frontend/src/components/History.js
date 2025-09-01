@@ -12,13 +12,15 @@ const History = ({ user, refreshKey = 0 }) => {
   const [errMsg, setErrMsg] = useState('');
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
   // Fetch history from backend (Firestore-backed)
   const fetchHistory = async () => {
     if (!user) return;
     setLoading(true);
     setErrMsg('');
     try {
-      const res = await fetch('http://localhost:5000/history', {
+      const res = await fetch(`${API_BASE}/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.uid }),
@@ -126,6 +128,31 @@ const History = ({ user, refreshKey = 0 }) => {
     URL.revokeObjectURL(url);
   };
 
+  // NEW: Report from history (no image available here)
+  const reportFromHistory = async (item) => {
+    if (!user) return;
+    try {
+      const body = {
+        userId: user.uid,
+        decision: item.decision || item.label || '',
+        confidence: item.confidence ?? null,
+        threshold: item.threshold ?? null,
+        filename: item.filename || '',
+      };
+      const res = await fetch(`${API_BASE}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Report failed');
+      alert('Thanks! Report sent without saving the image.');
+    } catch (e) {
+      console.error('Report failed', e);
+      alert(e.message || 'Report failed');
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -197,6 +224,7 @@ const History = ({ user, refreshKey = 0 }) => {
                   <th>Confidence</th>
                   <th>Threshold</th>
                   <th>Timestamp</th>
+                  <th>Actions</th> {/* NEW */}
                 </tr>
               </thead>
               <tbody>
@@ -210,6 +238,15 @@ const History = ({ user, refreshKey = 0 }) => {
                     <td>{item.confidence != null ? (Number(item.confidence) * 100).toFixed(2) + '%' : ''}</td>
                     <td>{item.threshold != null ? Math.round(Number(item.threshold) * 100) + '%' : ''}</td>
                     <td>{typeof item.timestamp === 'string' ? item.timestamp : ''}</td>
+                    <td>
+                      <Button
+                        size="sm"
+                        variant="outline-warning"
+                        onClick={() => reportFromHistory(item)}
+                      >
+                        Report
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
