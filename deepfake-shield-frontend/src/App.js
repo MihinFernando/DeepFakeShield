@@ -10,6 +10,7 @@ import FAQ from './components/FAQ';
 import Blog from './components/Blog';
 import Tutorials from './components/Tutorial';
 import AboutUs from './components/AboutUs';
+import Contact from './components/Contact';
 import './App.css';
 
 function App() {
@@ -57,6 +58,7 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/tutorials" element={<Tutorials />} />
           <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
