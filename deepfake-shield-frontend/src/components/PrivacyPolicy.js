@@ -9,7 +9,7 @@ const PrivacyPolicy = () => {
       <Row className="mb-5">
         <Col lg={10} className="mx-auto">
           <h1 className="text-glow mb-3">Privacy Policy</h1>
-          <p className="lead">Last Updated: September 15, 2025</p>
+          <p className="lead">Last Updated: September 5, 2025</p>
           <p className="text-light-muted">
             At DeepFakeShield, we take your privacy seriously. This Privacy Policy explains how we collect, 
             use, disclose, and safeguard your information when you use our services.
