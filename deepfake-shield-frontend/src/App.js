@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import HomePage from './components/HomePage';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
+import FAQ from './components/FAQ';
 import './App.css';
 
 function App() {
@@ -49,6 +50,7 @@ function App() {
             path="/dashboard" 
             element={user ? <Dashboard user={user} /> : <Navigate to="/auth" />} 
           />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
