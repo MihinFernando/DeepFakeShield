@@ -1,11 +1,12 @@
 // src/components/AuthPage.js
 import React, { useState } from 'react';
-import { auth, googleProvider } from '../firebase';
+import { auth, googleProvider, db } from '../firebase';
 import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword
 } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { Container, Form, Button, Card, Navbar, Nav } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -13,27 +14,52 @@ const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleAuth = async () => {
+    setLoading(true);
     try {
+      let userCredential;
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Create user document with default 'user' role for new users
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          email: email,
+          role: 'user',
+          createdAt: new Date()
+        });
       }
       navigate('/dashboard');
     } catch (error) {
       alert(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      
+      // Check if this is a new user (first time signing in with Google)
+      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      
+      // Create user document if it doesn't exist
+      await setDoc(userDocRef, {
+        email: userCredential.user.email,
+        role: 'user',
+        createdAt: new Date()
+      }, { merge: true });
+      
       navigate('/dashboard');
     } catch (error) {
       alert(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,14 +121,16 @@ const AuthPage = () => {
                 className="w-100 mb-3"
                 style={{ backgroundColor: '#7f5af0', border: 'none' }}
                 onClick={handleAuth}
+                disabled={loading}
               >
-                {isLogin ? 'Login' : 'Register'}
+                {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
               </Button>
 
               <Button
                 variant="outline-light"
                 className="w-100 mb-2"
                 onClick={handleGoogleLogin}
+                disabled={loading}
               >
                 Sign in with Google
               </Button>
