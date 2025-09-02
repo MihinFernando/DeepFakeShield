@@ -213,9 +213,8 @@ const HomePage = ({ user }) => {
             <div className="col-md-2 mb-3">
               <h6>Company</h6>
               <ul className="list-unstyled">
-                <li><a href="#about" className="text-light-muted">About Us</a></li>
                 <li><Link to="/contact" className="text-light-muted">Contact</Link></li>
-                <li><a href="#privacy" className="text-light-muted">Privacy Policy</a></li>
+                <li><Link to="/privacy" className="text-light-muted">Privacy Policy</Link></li>
               </ul>
             </div>
             <div className="col-md-4 mb-3">
