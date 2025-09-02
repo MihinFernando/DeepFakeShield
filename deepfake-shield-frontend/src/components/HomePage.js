@@ -207,7 +207,7 @@ const HomePage = ({ user }) => {
               <ul className="list-unstyled">
                 <li><Link to="/faq" className="text-light-muted">FAQ</Link></li>
                 <li><Link to="/blog" className="text-light-muted">Blog</Link></li>
-                <li><a href="#tutorials" className="text-light-muted">Tutorials</a></li>
+                <li><Link to="/tutorials" className="text-light-muted">Tutorials</Link></li>
               </ul>
             </div>
             <div className="col-md-2 mb-3">

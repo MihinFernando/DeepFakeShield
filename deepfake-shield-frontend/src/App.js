@@ -8,6 +8,7 @@ import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import FAQ from './components/FAQ';
 import Blog from './components/Blog';
+import Tutorials from './components/Tutorial';
 import './App.css';
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
           />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/tutorials" element={<Tutorials />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
