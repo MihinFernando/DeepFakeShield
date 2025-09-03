@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { Container, Button, Card, Spinner, Navbar, Nav } from 'react-bootstrap';
+import { Container, Button, Card, Spinner, Navbar, Nav, Collapse } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import History from './History';
 import DropzoneUpload from './DropzoneUpload';
-import ReportModal from './ReportModal'; // 👈 NEW
+import ReportModal from './ReportModal';
 import '../App.css';
 
 const Dashboard = ({ user }) => {
@@ -14,7 +14,8 @@ const Dashboard = ({ user }) => {
   const [result, setResult] = useState(null);    // Scan result from backend
   const [loading, setLoading] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
-  const [showReport, setShowReport] = useState(false); // 👈 NEW
+  const [showReport, setShowReport] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false); // 👈 NEW
   const navigate = useNavigate();
 
   const handleUpload = async () => {
@@ -84,13 +85,30 @@ const Dashboard = ({ user }) => {
     img.src = url;
   };
 
+  // 👇 Updated to include "uncertain" + advanced details
   const renderResult = () => {
     if (!result) return null;
 
-    const conf = Number(result.confidence ?? 0);               // 0..1
-    const raw = (result.label || '').toLowerCase();            // 'fake' | 'real'
+    const conf = Number(result.confidence ?? 0);
+    const raw = (result.label || '').toLowerCase();
     const decision = (result.decision || raw || '').toLowerCase();
     const isFake = decision === 'fake';
+    const isReal = decision === 'real';
+    const isUncertain = decision === 'uncertain';
+
+    if (isUncertain) {
+      return (
+        <div className="mt-4 text-center">
+          <h5 className="fw-bold text-warning">Result: Uncertain</h5>
+          <p className="text-light">
+            We couldn’t reach a confident verdict. Please review manually or report.
+          </p>
+          <Button variant="outline-warning" onClick={() => setShowReport(true)}>
+            Report this result
+          </Button>
+        </div>
+      );
+    }
 
     return (
       <div className="mt-4 text-center">
@@ -114,11 +132,34 @@ const Dashboard = ({ user }) => {
               Download Watermarked Image
             </Button>
           )}
-          {/* 👇 Always allow reporting after a scan */}
           <Button variant="outline-warning" onClick={() => setShowReport(true)}>
             Report this result
           </Button>
+          <Button
+            variant="outline-info"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            aria-controls="advanced-collapse"
+            aria-expanded={showAdvanced}
+          >
+            {showAdvanced ? 'Hide' : 'Show'} Advanced Details
+          </Button>
         </div>
+
+        <Collapse in={showAdvanced}>
+          <div id="advanced-collapse" className="mt-3">
+            <Card className="bg-dark text-light p-3">
+              <h6 className="text-info">Advanced Signals</h6>
+              <ul className="list-unstyled small text-start">
+                <li>ELA Score: {result.signals?.ela?.toFixed?.(2) ?? '—'}</li>
+                <li>TTA Std Dev: {result.signals?.tta_std?.toFixed?.(4) ?? '—'}</li>
+                <li>Laplacian Var: {result.signals?.laplacian_var?.toFixed?.(0) ?? '—'}</li>
+                <li>EXIF Present: {result.signals?.exif_has ? 'Yes' : 'No'}</li>
+                <li>EXIF Software: {result.signals?.exif_software ?? '—'}</li>
+                <li>API Second Opinion: {result.signals?.api_p_fake != null ? (result.signals.api_p_fake * 100).toFixed(1) + '%' : '—'}</li>
+              </ul>
+            </Card>
+          </div>
+        </Collapse>
       </div>
     );
   };
@@ -178,7 +219,7 @@ const Dashboard = ({ user }) => {
         </Card>
 
         <div className="mt-5 w-100">
-          <History user={user} refreshKey={historyRefresh} /> {/* 👈 keep history refreshed */}
+          <History user={user} refreshKey={historyRefresh} />
         </div>
       </Container>
 
@@ -225,13 +266,13 @@ const Dashboard = ({ user }) => {
         </Container>
       </footer>
 
-      {/* 👇 NEW: Report Modal instance */}
+      {/* Report Modal instance */}
       <ReportModal
         show={showReport}
         onClose={() => setShowReport(false)}
-        file={image}          // pass the uploaded File for "OK (save image & report)"
+        file={image}
         user={user}
-        lastScan={{ ...result, filename: image?.name }} // pass decision/confidence/threshold (+ filename)
+        lastScan={{ ...result, filename: image?.name }}
       />
     </>
   );

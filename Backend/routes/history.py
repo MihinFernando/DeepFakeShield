@@ -1,8 +1,8 @@
-# routes/history.py
+# Backend/routes/history.py
 from flask import Blueprint, request, jsonify
-from datetime import datetime
-from firebase_admin_init import db
-from google.cloud import firestore as gcfs  # for Query.DESCENDING
+from Backend.firebase_admin_init import db
+from google.cloud import firestore as gcfs  # Query.DESCENDING, SERVER_TIMESTAMP
+import datetime
 import traceback
 
 history_bp = Blueprint('history', __name__)
@@ -15,8 +15,7 @@ def get_user_history():
         if not user_id:
             return jsonify({"error": "Missing userId"}), 400
 
-        # Path MUST match where scan.py writes:
-        # users/{uid}/scans ordered by timestamp desc
+        # Primary query: order by 'timestamp' (server timestamp)
         q = (
             db.collection("users")
               .document(user_id)
@@ -27,20 +26,34 @@ def get_user_history():
 
         items = []
         for snap in q.stream():
-            doc = snap.to_dict()
+            doc = snap.to_dict() or {}
             ts = doc.get("timestamp")
             ts_str = ""
+
+            # Prefer Firestore Timestamp
             try:
-                if hasattr(ts, "to_datetime"):
-                    ts_str = ts.to_datetime().strftime("%Y-%m-%d %H:%M:%S")
+                if ts is not None:
+                    # Firestore Timestamp -> python datetime
+                    if hasattr(ts, "to_datetime"):
+                        dt = ts.to_datetime()
+                    else:
+                        dt = ts  # already datetime?
+                    if isinstance(dt, datetime.datetime):
+                        ts_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    # Fallback to old float 'createdAt'
+                    created_at = doc.get("createdAt")
+                    if isinstance(created_at, (int, float)):
+                        dt = datetime.datetime.fromtimestamp(created_at)
+                        ts_str = dt.strftime("%Y-%m-%d %H:%M:%S")
             except Exception:
                 ts_str = ""
 
             items.append({
                 "filename": doc.get("filename", ""),
                 "decision": doc.get("decision", ""),
-                "confidence": doc.get("confidence", None),
-                "threshold": doc.get("threshold", None),
+                "confidence": doc.get("confidence"),
+                "threshold": doc.get("threshold"),
                 "timestamp": ts_str,
             })
 
