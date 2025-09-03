@@ -117,13 +117,6 @@ const AdminDashboard = ({ user }) => {
       {/* Light Mode Navbar */}
       <Navbar bg="light" variant="light" expand="lg" className="px-3 shadow-sm">
         <Navbar.Brand className="text-primary fw-bold">
-          <img
-            src="/logo.png"
-            width="30"
-            height="30"
-            className="d-inline-block align-top me-2"
-            alt="DeepFakeShield Logo"
-          />
           DeepFakeShield Admin
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="admin-navbar" />
