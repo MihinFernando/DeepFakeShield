@@ -1,7 +1,7 @@
 import React from "react";
 import { TextInput } from "react-native-paper";
 
-export default function AppTextInput(props) {
+function AppTextInput(props) {
   return (
     <TextInput
       mode="outlined"
@@ -12,3 +12,8 @@ export default function AppTextInput(props) {
     />
   );
 }
+
+// Attach the Icon component to AppTextInput
+AppTextInput.Icon = TextInput.Icon;
+
+export default AppTextInput;
