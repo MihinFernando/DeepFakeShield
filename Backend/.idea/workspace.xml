@@ -6,10 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="e49126c0-07fa-43f8-9ed0-bdb4c259b0e4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../DeepFakeReactNative/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../DeepFakeReactNative/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../DeepFakeReactNative/src/screens/DashboardScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/../DeepFakeReactNative/src/screens/DashboardScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../DeepFakeReactNative/src/screens/LoginScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/../DeepFakeReactNative/src/screens/LoginScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../DeepFakeReactNative/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../DeepFakeReactNative/yarn.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
