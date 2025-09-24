@@ -58,7 +58,9 @@ const TopBar = ({ isAuthed, onHome, onLogin, onLogout }) => (
   </div>
 );
 
-function Landing({ onCTALogin }) {
+function Landing({ onCTALogin, scanCount, onScan, file, setFile }) {
+  const inputRef = useRef(null);
+
   return (
     <div className="mx-auto max-w-5xl px-4 pt-20 pb-24">
       <Card className="p-10">
@@ -67,12 +69,34 @@ function Landing({ onCTALogin }) {
             DeepFakeShield
           </h1>
           <p className="mt-3 text-cyan-200/80">AI‑Generated Image Detection & Harm Prevention</p>
+
+          <div
+            onClick={() => inputRef.current?.click()}
+            className="mt-6 rounded-2xl border-2 border-dashed border-cyan-500/40 bg-black/30 p-10 text-center cursor-pointer hover:bg-white/5"
+          >
+            <div className="text-5xl mb-4">🗂️</div>
+            <p className="font-semibold">Drag & drop an image here</p>
+            <p className="text-sm opacity-70">or click to browse</p>
+            <p className="text-xs mt-1 opacity-60">PNG • JPG • JPEG • WEBP</p>
+            {file && <p className="mt-3 text-emerald-300">Selected: {file.name}</p>}
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+          </div>
+
+          <p className="mt-2 text-sm text-cyan-400">Scans left: {3 - scanCount}</p>
+
           <div className="mt-6 grid gap-4">
-            <div className="rounded-xl bg-[#0c1622] p-6 border border-white/10"/>
-            <div className="rounded-xl bg-[#0d0f1a] p-12 border-2 border-dashed border-cyan-500/30"/>
-            <button onClick={onCTALogin}
-              className="mx-auto w-full md:w-1/2 h-12 rounded-xl bg-blue-700 hover:bg-blue-600 transition font-semibold">
-              Login / Sign Up
+            <button
+              className="mx-auto w-full md:w-1/2 h-12 rounded-xl bg-blue-700 hover:bg-blue-600 transition font-semibold"
+              onClick={onScan}
+              disabled={scanCount >= 3}
+            >
+              {scanCount < 3 ? 'Scan' : 'Login to continue'}
             </button>
           </div>
         </div>
@@ -100,6 +124,8 @@ function Login({ onLoggedIn }) {
 
 function Dashboard({ file, onFileSelect, onScan }) {
   const inputRef = useRef(null);
+  const navigate = useNavigate();
+
   return (
     <div className="mx-auto max-w-4xl px-4 pt-12 pb-16">
       <Card className="p-8">
@@ -108,19 +134,22 @@ function Dashboard({ file, onFileSelect, onScan }) {
           <p className="mt-2 text-cyan-200/80">AI‑Generated Image Detection & Harm Prevention</p>
         </div>
 
-        <div className="mt-6 rounded-xl bg-[#0c1622] p-5 border border-white/10" />
-
         <div
           onClick={() => inputRef.current?.click()}
-          className="mt-4 rounded-2xl border-2 border-dashed border-cyan-500/40 bg-black/30 p-10 text-center cursor-pointer hover:bg-white/5"
+          className="mt-6 rounded-2xl border-2 border-dashed border-cyan-500/40 bg-black/30 p-10 text-center cursor-pointer hover:bg-white/5"
         >
           <div className="text-5xl mb-4">🗂️</div>
           <p className="font-semibold">Drag & drop an image here</p>
           <p className="text-sm opacity-70">or click to browse</p>
           <p className="text-xs mt-1 opacity-60">PNG • JPG • JPEG • WEBP</p>
           {file && <p className="mt-3 text-emerald-300">Selected: {file.name}</p>}
-          <input ref={inputRef} type="file" accept="image/*" className="hidden"
-                 onChange={(e) => onFileSelect(e.target.files?.[0] || null)} />
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => onFileSelect(e.target.files?.[0] || null)}
+          />
         </div>
 
         <button
@@ -131,8 +160,13 @@ function Dashboard({ file, onFileSelect, onScan }) {
           Scan Image
         </button>
 
-        <div className="mt-8 flex justify-center">
-          <button className="px-5 py-2 rounded-xl border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/10">Logout</button>
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={() => navigate('/report')}
+            className="px-5 py-2 rounded-xl border border-amber-400/40 text-amber-300 hover:bg-amber-500/10"
+          >
+            Report
+          </button>
         </div>
       </Card>
     </div>
