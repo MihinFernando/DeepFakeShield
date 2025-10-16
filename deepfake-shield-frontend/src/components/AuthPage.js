@@ -6,8 +6,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { Container, Form, Button, Card, Navbar, Nav } from 'react-bootstrap';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Import getDoc
+import { Container, Form, Button, Card, Navbar, Nav, Alert } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 
 const AuthPage = () => {
@@ -15,26 +15,45 @@ const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
+
+  // Helper function to handle creating or updating the user document
+  const handleUserDoc = async (user) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      // Document does NOT exist (new user or first social login), create it with default role.
+      await setDoc(userDocRef, {
+        email: user.email,
+        role: 'user', // Default role for all new users
+        createdAt: new Date(),
+      });
+      console.log("New user document created.");
+    } 
+    // If the document exists, we do nothing to preserve any custom role (like 'admin').
+  };
 
   const handleAuth = async () => {
     setLoading(true);
+    setMessage('');
     try {
       let userCredential;
       if (isLogin) {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       } else {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Create user document with default 'user' role for new users
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email: email,
-          role: 'user',
-          createdAt: new Date()
-        });
       }
-      navigate('/dashboard');
+      
+      // Ensure the user document exists and has a role set
+      await handleUserDoc(userCredential.user);
+      
+      // Navigate is now handled by App.js's onAuthStateChanged listener
+      // navigate('/dashboard'); 
     } catch (error) {
-      alert(error.message);
+      console.error("Email/Password Auth Error:", error);
+      setMessage(`Authentication failed: ${error.message.replace('Firebase:', '').trim()}`);
     } finally {
       setLoading(false);
     }
@@ -42,22 +61,18 @@ const AuthPage = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setMessage('');
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
       
-      // Check if this is a new user (first time signing in with Google)
-      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      // IMPORTANT: Handle user document creation or update securely
+      await handleUserDoc(result.user);
       
-      // Create user document if it doesn't exist
-      await setDoc(userDocRef, {
-        email: userCredential.user.email,
-        role: 'user',
-        createdAt: new Date()
-      }, { merge: true });
-      
-      navigate('/dashboard');
+      // Navigate is now handled by App.js's onAuthStateChanged listener
+      // navigate('/dashboard'); 
     } catch (error) {
-      alert(error.message);
+      console.error("Google Auth Error:", error);
+      setMessage(`Google sign-in failed: ${error.message.replace('Firebase:', '').trim()}`);
     } finally {
       setLoading(false);
     }
@@ -65,48 +80,41 @@ const AuthPage = () => {
 
   return (
     <>
-      {/* Navigation Bar */}
-      <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
-        <Navbar.Brand href="#home" className="text-glow">
-          <img
-            src="/logo.png"
-            width="30"
-            height="30"
-            className="d-inline-block align-top me-2"
-            alt="DeepFakeShield Logo"
-          />
-          DeepFakeShield
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
-          <Nav>
-            <Link to="/" className="btn btn-outline-light me-2">
-              Home
-            </Link>
-          </Nav>
-        </Navbar.Collapse>
+      <Navbar bg="dark" variant="dark" className="px-3" style={{ borderBottom: '1px solid #444' }}>
+        <Container fluid>
+          <Navbar.Brand as={Link} to="/" className="text-info">
+            DeepFakeShield
+          </Navbar.Brand>
+        </Container>
       </Navbar>
-
-      <div style={{ minHeight: '80vh', backgroundColor: '#1e1e2f' }} className="d-flex justify-content-center align-items-center text-light">
-        <Card style={{ width: '100%', maxWidth: '400px', backgroundColor: '#2e2e3e', border: 'none' }}>
+      
+      <div 
+        className="d-flex justify-content-center align-items-center" 
+        style={{ minHeight: '85vh', backgroundColor: '#1e1e2f' }}
+      >
+        <Card 
+          style={{ width: '100%', maxWidth: '400px', backgroundColor: '#2e2e3e', border: 'none' }} 
+          className="shadow-lg p-3"
+        >
           <Card.Body>
-            <h3 className="text-center mb-4" style={{ color: '#d6d6d6' }}>
-              {isLogin ? 'Login to DeepFakeShield' : 'Create an Account'}
+            <h3 className="text-center mb-4" style={{ color: '#00bfa6' }}>
+              {isLogin ? 'Welcome Back' : 'Join DeepFakeShield'}
             </h3>
+            
+            {message && <Alert variant="danger" className="text-center">{message}</Alert>}
+
             <Form>
-              <Form.Group className="mb-3" controlId="formEmail">
-                <Form.Label style={{ color: '#d6d6d6' }}>Email address</Form.Label>
+              <Form.Group className="mb-3" controlId="formBasicEmail">
                 <Form.Control
                   type="email"
-                  placeholder="Enter email"
+                  placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={{ backgroundColor: '#1e1e2f', color: '#d6d6d6', borderColor: '#444' }}
                 />
               </Form.Group>
 
-              <Form.Group className="mb-3" controlId="formPassword">
-                <Form.Label style={{ color: '#d6d6d6' }}>Password</Form.Label>
+              <Form.Group className="mb-4" controlId="formBasicPassword">
                 <Form.Control
                   type="password"
                   placeholder="Password"
@@ -123,22 +131,30 @@ const AuthPage = () => {
                 onClick={handleAuth}
                 disabled={loading}
               >
-                {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
+                {loading && !message ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
               </Button>
 
+              <div className="text-center mb-3">
+                <span className="text-muted">OR</span>
+              </div>
+              
               <Button
                 variant="outline-light"
                 className="w-100 mb-2"
                 onClick={handleGoogleLogin}
                 disabled={loading}
+                style={{ borderColor: '#444' }}
               >
-                Sign in with Google
+                <i className="bi bi-google me-2"></i> Sign in with Google
               </Button>
 
               <div className="text-center mt-3">
                 <span
                   style={{ cursor: 'pointer', color: '#00bfa6' }}
-                  onClick={() => setIsLogin(!isLogin)}
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setMessage('');
+                  }}
                 >
                   {isLogin ? 'Need an account? Register' : 'Already have an account? Login'}
                 </span>
@@ -156,6 +172,8 @@ const AuthPage = () => {
           </p>
         </Container>
       </footer>
+      {/* Bootstrap Icons */}
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     </>
   );
 };

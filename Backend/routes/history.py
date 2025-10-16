@@ -1,6 +1,6 @@
 # Backend/routes/history.py
 from flask import Blueprint, request, jsonify
-from Backend.firebase_admin_init import db
+from firebase_admin_init import db
 from google.cloud import firestore as gcfs  # Query.DESCENDING, SERVER_TIMESTAMP
 import datetime
 import traceback

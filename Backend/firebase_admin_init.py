@@ -1,6 +1,6 @@
 # firebase_admin_init.py
 import os
-import firebase_admin
+import firebase_admin # <--- This is the missing module!
 from firebase_admin import credentials, firestore
 
 SERVICE_ACCOUNT_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")

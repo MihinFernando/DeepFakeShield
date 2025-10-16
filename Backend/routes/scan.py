@@ -3,10 +3,10 @@ from flask import Blueprint, request, jsonify
 import os, tempfile, time
 from werkzeug.utils import secure_filename
 
-from Backend.models.detector import detect_image_tta
-from Backend.utils.image_signals import ela_score, exif_hints, laplacian_var
-from Backend.utils.hf_api import call_hf_api
-from Backend.firebase_admin_init import db
+from models.detector import detect_image_tta
+from utils.image_signals import ela_score, exif_hints, laplacian_var
+from utils.hf_api import call_hf_api
+from firebase_admin_init import db
 from google.cloud import firestore as gcfs  # <-- needed for SERVER_TIMESTAMP
 
 bp = Blueprint("scan", __name__, url_prefix="/")

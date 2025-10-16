@@ -1,10 +1,14 @@
 import os
+import sys
+
 from flask import Flask
 from flask_cors import CORS
-from Backend.firebase_admin_init import db
-from Backend.routes.scan import bp as scan_bp   # 👈 rename to avoid clash
-from Backend.routes.history import history_bp
-from Backend.routes.report import report_bp
+# Use relative import
+from firebase_admin_init import db
+from routes.scan import bp as scan_bp   # 👈 rename to avoid clash
+from routes.history import history_bp
+from routes.report import report_bp
+
 
 def create_app():
     app = Flask(__name__)

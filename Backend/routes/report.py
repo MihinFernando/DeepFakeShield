@@ -2,7 +2,7 @@
 import os, uuid, datetime, traceback
 from flask import Blueprint, request, jsonify, current_app, send_file, abort
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from Backend.firebase_admin_init import db
+from firebase_admin_init import db
 
 report_bp = Blueprint("report", __name__)
 

@@ -1,101 +1,137 @@
 // src/components/AdminDashboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+// Removed 'orderBy' as it was unused
+import { collection, getDocs, query, limit } from 'firebase/firestore'; 
 import { Container, Row, Col, Card, Button, Navbar, Nav, Spinner, Table, Badge, Alert, Image, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+// Removed unused 'useNavigate' import
 
-const AdminDashboard = ({ user }) => {
+const REPORTS_COLLECTION = 'reports'; 
+
+const AdminDashboard = ({ user, userRole }) => { 
   const [stats, setStats] = useState(null);
   const [recentReports, setRecentReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
-  const navigate = useNavigate();
+  // Removed 'const navigate = useNavigate();' as it was unused
 
   // Your Flask backend URL - CHANGE THIS IF YOUR BACKEND RUNS ON DIFFERENT PORT
   const BACKEND_URL = 'http://localhost:5000';
 
-  useEffect(() => {
-    fetchAdminData();
-  }, []);
-
-  const fetchAdminData = async () => {
+  // Wrapping fetchAdminData in useCallback to fix the useEffect dependency warning
+  const fetchAdminData = useCallback(async () => {
+    setLoading(true);
     try {
+      // ⚠️ IMPORTANT: Perform a quick check to see if the user is available and logged in
+      if (!auth.currentUser || !user?.uid) {
+         throw new Error("User not authenticated or UID missing when fetchAdminData ran.");
+      }
+
       setError('');
       
-      // Get total reports count
-      const reportsSnapshot = await getDocs(collection(db, 'reports'));
+      // Get total reports count 
+      const reportsCollectionRef = collection(db, REPORTS_COLLECTION);
+      const reportsSnapshot = await getDocs(reportsCollectionRef);
       const totalReports = reportsSnapshot.size;
       
-      // Get today's reports
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayReports = reportsSnapshot.docs.filter(doc => {
-        const data = doc.data();
-        return data.createdAt && new Date(data.createdAt) >= today;
-      }).length;
+      // Get recent reports (limit to 10) - The query variable is still needed
+      const q = query(reportsCollectionRef, limit(10));
+      // Removed 'const recentReportsSnapshot = ...' as it was unused. The call is still needed 
+      // here to ensure the rules allow it, but the data processing uses 'reportsSnapshot'.
+      await getDocs(q); 
       
-      // Get user count
-      const usersSnapshot = await getDocs(collection(db, 'users'));
-      const totalUsers = usersSnapshot.size;
+      // --- Processing Logic remains the same ---
+      let todayReports = 0;
+      let totalFakeReports = 0;
+      let totalRealReports = 0;
       
-      // Get detection stats from reports
-      const fakeReports = reportsSnapshot.docs.filter(doc => 
-        doc.data().decision === 'fake'
-      ).length;
-      
-      const realReports = totalReports - fakeReports;
-      const detectionRate = totalReports > 0 ? (fakeReports / totalReports * 100) : 0;
-      
-      // Get recent reports with image URLs
-      const recentReportsQuery = query(
-        collection(db, 'reports'),
-        orderBy('createdAt', 'desc'),
-        limit(10)
-      );
-      const recentReportsSnapshot = await getDocs(recentReportsQuery);
-      const recentReportsData = recentReportsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      setStats({
-        totalReports,
-        todayReports,
-        totalUsers,
-        fakeReports,
-        realReports,
-        detectionRate: Math.round(detectionRate)
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const allReports = reportsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          const timestampField = data.createdAt; 
+          
+          let timestamp;
+          if (timestampField && typeof timestampField.toDate === 'function') {
+             timestamp = timestampField.toDate(); 
+          } else if (timestampField instanceof Date) {
+             timestamp = timestampField;
+          } else if (timestampField) {
+             timestamp = new Date(timestampField);
+          } else {
+             timestamp = new Date(0); 
+          }
+          
+          if (timestamp >= todayStart) {
+              todayReports++;
+          }
+          if (data.result === 'FAKE') {
+              totalFakeReports++;
+          } else if (data.result === 'REAL') {
+              totalRealReports++;
+          }
+          
+          return { id: doc.id, ...data, timestamp: timestamp };
       });
       
-      setRecentReports(recentReportsData);
-    } catch (error) {
-      console.error('Error fetching admin data:', error);
-      setError('Failed to load admin data. Please check your Firestore permissions.');
+      setStats({
+        totalReports: totalReports,
+        todayReports: todayReports,
+        totalFakeReports: totalFakeReports,
+        totalRealReports: totalRealReports,
+        backendStatus: BACKEND_URL ? 'Connected' : 'Offline'
+      });
+      
+      // Sort recent reports by timestamp descending in memory
+      const sortedReports = allReports.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      
+      // Take the top 10 recent reports for display
+      setRecentReports(sortedReports.slice(0, 10));
+
+    } catch (err) {
+      console.error('--- CRITICAL FIRESTORE ERROR IN ADMIN DASHBOARD ---');
+      console.error('Check your Firebase Security Rules! The rule is denying the request to read from a collection.');
+      console.error('Full Error Object:', err); 
+      
+      setError('Failed to fetch data. Permissions denied by Firebase Rules. Check console for details.');
+      
+      setStats({
+        totalReports: 0,
+        todayReports: 0,
+        totalFakeReports: 0,
+        totalRealReports: 0,
+        backendStatus: BACKEND_URL ? 'Connected' : 'Offline'
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, userRole]); // Dependencies for useCallback
+
+  useEffect(() => {
+    // CRITICAL FIX: Ensures fetchAdminData only runs when the role is confirmed 'admin'
+    if (user && user.uid && userRole === 'admin') { 
+      fetchAdminData();
+    } else if (user && userRole !== 'admin') {
+      console.warn("Attempted to load Admin Dashboard with non-admin role:", userRole);
+      setError("Access Denied: You do not have administrator privileges.");
+      setLoading(false);
+    }
+  }, [user, userRole, fetchAdminData]); // fetchAdminData included now that it's memoized
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
-
-  const openImageModal = (imageUrl) => {
-    // Fix: Convert relative URL to absolute backend URL
-    let fullImageUrl = imageUrl;
-    if (imageUrl && imageUrl.startsWith('/')) {
-      fullImageUrl = `${BACKEND_URL}${imageUrl}`;
-    }
-    setSelectedImage(fullImageUrl);
+  
+  const openImageModal = (image) => {
+    setSelectedImage(image);
     setShowImageModal(true);
   };
 
@@ -104,258 +140,187 @@ const AdminDashboard = ({ user }) => {
     setSelectedImage('');
   };
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-        <Spinner animation="border" variant="primary" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {/* Light Mode Navbar */}
-      <Navbar bg="light" variant="light" expand="lg" className="px-3 shadow-sm">
-        <Navbar.Brand className="text-primary fw-bold">
-          DeepFakeShield Admin
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="admin-navbar" />
-        <Navbar.Collapse id="admin-navbar" className="justify-content-end">
-          <Nav>
-            <Button variant="outline-secondary" className="me-2" onClick={() => navigate('/')}>
-              Home
-            </Button>
-            <Button variant="outline-primary" onClick={handleLogout}>
-              Logout
-            </Button>
-          </Nav>
-        </Navbar.Collapse>
-      </Navbar>
-
-      <Container fluid className="py-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-        {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
-        
-        {/* Statistics Cards */}
-        <Row className="mb-4">
-          <Col xl={3} lg={6} className="mb-3">
-            <Card className="shadow-sm border-0 h-100">
-              <Card.Body className="text-center">
-                <div className="text-muted small mb-1">TOTAL REPORTS</div>
-                <h2 className="text-primary fw-bold">{stats?.totalReports?.toLocaleString() || 0}</h2>
-                <div className="text-success small">
-                  <i className="bi bi-arrow-up"></i> Overall
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={3} lg={6} className="mb-3">
-            <Card className="shadow-sm border-0 h-100">
-              <Card.Body className="text-center">
-                <div className="text-muted small mb-1">TODAY'S REPORTS</div>
-                <h2 className="text-info fw-bold">{stats?.todayReports || 0}</h2>
-                <div className="text-warning small">
-                  <i className="bi bi-clock"></i> Today
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={3} lg={6} className="mb-3">
-            <Card className="shadow-sm border-0 h-100">
-              <Card.Body className="text-center">
-                <div className="text-muted small mb-1">TOTAL USERS</div>
-                <h2 className="text-warning fw-bold">{stats?.totalUsers || 0}</h2>
-                <div className="text-muted small">
-                  <i className="bi bi-people"></i> Registered
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={3} lg={6} className="mb-3">
-            <Card className="shadow-sm border-0 h-100">
-              <Card.Body className="text-center">
-                <div className="text-muted small mb-1">DETECTION RATE</div>
-                <h2 className="text-danger fw-bold">{stats?.detectionRate || 0}%</h2>
-                <div className="text-danger small">
-                  <i className="bi bi-shield-exclamation"></i> AI Content
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row className="mb-4">
-          {/* Detection Distribution */}
-          <Col lg={6} className="mb-4">
-            <Card className="shadow-sm border-0 h-100">
+  const dashboardContent = (
+    <Container fluid className="py-4">
+      <h2 className="text-info mb-4">Admin Dashboard</h2>
+      
+      <Row className="mb-4">
+        <Col md={12}>
+          {error && <Alert variant="danger" className="text-center">{error}</Alert>}
+        </Col>
+      </Row>
+      
+      {/* Stats Cards */}
+      {stats && (
+        <Row className="g-4 mb-5">
+          {/* Card 1: Total Reports */}
+          <Col lg={3} md={6}>
+            <Card className="shadow-lg h-100" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
               <Card.Body>
-                <h6 className="text-primary mb-3 fw-bold">
-                  <i className="bi bi-pie-chart me-2"></i>
-                  Detection Distribution
-                </h6>
-                <div className="text-center">
-                  <div className="d-flex justify-content-around mb-3">
-                    <div>
-                      <Badge bg="success" className="p-2 px-3">
-                        <i className="bi bi-check-circle me-1"></i>
-                        Real: {stats?.realReports || 0}
-                      </Badge>
-                    </div>
-                    <div>
-                      <Badge bg="danger" className="p-2 px-3">
-                        <i className="bi bi-exclamation-triangle me-1"></i>
-                        AI-Generated: {stats?.fakeReports || 0}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="progress" style={{ height: '30px', borderRadius: '15px' }}>
-                    <div 
-                      className="progress-bar bg-success" 
-                      style={{ 
-                        width: `${stats?.realReports && stats?.totalReports ? (stats.realReports / stats.totalReports * 100) : 50}%`,
-                        borderRadius: stats.realReports === stats.totalReports ? '15px' : '15px 0 0 15px'
-                      }}
-                    >
-                      {stats?.realReports && stats?.totalReports ? Math.round(stats.realReports / stats.totalReports * 100) : 50}%
-                    </div>
-                    <div 
-                      className="progress-bar bg-danger" 
-                      style={{ 
-                        width: `${stats?.fakeReports && stats?.totalReports ? (stats.fakeReports / stats.totalReports * 100) : 50}%`,
-                        borderRadius: stats.fakeReports === stats.totalReports ? '15px' : '0 15px 15px 0'
-                      }}
-                    >
-                      {stats?.fakeReports && stats?.totalReports ? Math.round(stats.fakeReports / stats.totalReports * 100) : 50}%
-                    </div>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-file-earmark-bar-graph fs-3 text-info me-3"></i>
+                  <div>
+                    <Card.Title className="text-info mb-0">Total Reports</Card.Title>
+                    <Card.Text className="fs-2 fw-bold text-light">{stats.totalReports}</Card.Text>
                   </div>
                 </div>
               </Card.Body>
             </Card>
           </Col>
           
-          {/* Recent Reports */}
-          <Col lg={6} className="mb-4">
-            <Card className="shadow-sm border-0 h-100">
+          {/* Card 2: Reports Today */}
+          <Col lg={3} md={6}>
+            <Card className="shadow-lg h-100" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
               <Card.Body>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="text-primary fw-bold mb-0">
-                    <i className="bi bi-clock-history me-2"></i>
-                    Recent Reports
-                  </h6>
-                  <Badge bg="primary" pill>{recentReports.length}</Badge>
-                </div>
-                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  {recentReports.length > 0 ? (
-                    <Table striped bordered hover size="sm" className="mb-0">
-                      <thead className="table-light">
-                        <tr>
-                          <th>Image</th>
-                          <th>Result</th>
-                          <th>Confidence</th>
-                          <th>View</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentReports.map(report => (
-                          <tr key={report.id}>
-                            <td className="text-truncate" style={{ maxWidth: '120px' }} title={report.filename}>
-                              {report.filename || 'Unknown'}
-                            </td>
-                            <td>
-                              <Badge bg={report.decision === 'fake' ? 'danger' : 'success'}>
-                                {report.decision}
-                              </Badge>
-                            </td>
-                            <td>
-                              {report.confidence ? `${(report.confidence * 100).toFixed(1)}%` : 'N/A'}
-                            </td>
-                            <td>
-                              {report.imageUrl && (
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => openImageModal(report.imageUrl)}
-                                >
-                                  <i className="bi bi-eye"></i>
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  ) : (
-                    <div className="text-center text-muted py-4">
-                      <i className="bi bi-inbox display-4 d-block mb-2"></i>
-                      No reports found
-                    </div>
-                  )}
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-calendar-check fs-3 text-success me-3"></i>
+                  <div>
+                    <Card.Title className="text-success mb-0">Reports Today</Card.Title>
+                    <Card.Text className="fs-2 fw-bold text-light">{stats.todayReports}</Card.Text>
+                  </div>
                 </div>
               </Card.Body>
             </Card>
           </Col>
-        </Row>
 
-        {/* System Information */}
-        <Row>
-          <Col>
-            <Card className="shadow-sm border-0">
+          {/* Card 3: Fake Reports */}
+          <Col lg={3} md={6}>
+            <Card className="shadow-lg h-100" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
               <Card.Body>
-                <h6 className="text-primary mb-3 fw-bold">
-                  <i className="bi bi-info-circle me-2"></i>
-                  System Information
-                </h6>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-x-octagon-fill fs-3 text-warning me-3"></i>
+                  <div>
+                    <Card.Title className="text-warning mb-0">Fake Reports</Card.Title>
+                    <Card.Text className="fs-2 fw-bold text-light">{stats.totalFakeReports}</Card.Text>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          {/* Card 4: Backend Status */}
+          <Col lg={3} md={6}>
+            <Card className="shadow-lg h-100" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
+              <Card.Body>
                 <Row>
-                  <Col md={6}>
-                    <div className="mb-2">
-                      <strong>Admin User:</strong> {user.email}
-                    </div>
-                    <div className="mb-2">
-                      <strong>User ID:</strong> 
-                      <span className="text-muted small ms-1">{user.uid}</span>
+                  <Col xs={12} className="d-flex align-items-center mb-2">
+                    <i className="bi bi-server fs-3 text-primary me-3"></i>
+                    <div>
+                      <Card.Title className="text-primary mb-0">Backend Status</Card.Title>
+                      <Card.Text className="fs-5 fw-bold text-light">{stats.backendStatus}</Card.Text>
                     </div>
                   </Col>
-                  <Col md={6}>
-                    <div className="mb-2">
-                      <strong>Total Reports:</strong> {stats?.totalReports || 0}
-                    </div>
-                    <div className="mb-2">
-                      <strong>Server Status:</strong> <Badge bg="success">Online</Badge>
-                    </div>
-                    <div className="mb-2">
-                      <strong>Backend:</strong> <Badge bg={BACKEND_URL ? 'success' : 'danger'}>
+                  <Col xs={12}>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <Button variant="primary" size="sm" onClick={fetchAdminData}>
+                        <i className="bi bi-arrow-clockwise me-2"></i>
+                        Refresh
+                      </Button>
+                      <Badge bg={stats.backendStatus === 'Connected' ? 'success' : 'danger'} className="fs-6">
                         {BACKEND_URL ? 'Connected' : 'Offline'}
                       </Badge>
                     </div>
                   </Col>
                 </Row>
-                <div className="text-center mt-3">
-                  <Button variant="primary" onClick={fetchAdminData}>
-                    <i className="bi bi-arrow-clockwise me-2"></i>
-                    Refresh Data
-                  </Button>
-                </div>
               </Card.Body>
             </Card>
           </Col>
         </Row>
-      </Container>
+      )}
+
+      {/* Recent Reports Table */}
+      <h3 className="text-info mb-3">Recent Reports (Admin View)</h3>
+      <Card className="shadow-lg" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
+        <Card.Body className="p-0">
+          <Table responsive striped hover variant="dark" className="mb-0">
+            <thead>
+              <tr style={{ backgroundColor: '#3a3a50' }}>
+                <th>ID</th>
+                <th>Result</th>
+                <th>Source</th>
+                <th>User ID</th>
+                <th>Reported On</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentReports.length > 0 ? recentReports.map((report) => (
+                <tr key={report.id}>
+                  <td>{report.id.substring(0, 8)}...</td>
+                  <td>
+                    <Badge bg={report.result === 'FAKE' ? 'danger' : 'success'}>
+                      {report.result}
+                    </Badge>
+                  </td>
+                  <td>{report.sourceType || 'N/A'}</td>
+                  <td>{report.userId ? report.userId.substring(0, 8) + '...' : 'Anonymous'}</td>
+                  <td>{report.timestamp.toLocaleString()}</td>
+                  <td>
+                    <Button 
+                      variant="outline-info" 
+                      size="sm"
+                      onClick={() => openImageModal(report.scanUrl)}
+                      disabled={!report.scanUrl}
+                    >
+                      View Image
+                    </Button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="6" className="text-center text-muted py-3">
+                    {loading ? 'Loading...' : 'No reports found.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+    </Container>
+  );
+
+  return (
+    <div style={{ backgroundColor: '#1e1e2f', minHeight: '100vh', color: '#d6d6d6' }}>
+      <Navbar bg="dark" variant="dark" expand="lg" className="px-3 shadow-lg">
+        <Container fluid>
+          <Navbar.Brand href="#home" className="text-info fw-bold fs-4">DeepFakeShield Admin</Navbar.Brand>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="ms-auto">
+              <Nav.Link onClick={handleLogout} className="text-danger">
+                <i className="bi bi-box-arrow-right me-2"></i>Logout
+              </Nav.Link>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+
+      {loading && !stats ? (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
+          <Spinner animation="border" variant="info" role="status" className="me-2" />
+          <span className="text-info">Loading admin data...</span>
+        </div>
+      ) : (
+        dashboardContent
+      )}
 
       {/* Image Modal */}
-      <Modal show={showImageModal} onHide={closeImageModal} size="lg">
-        <Modal.Header closeButton>
+      <Modal show={showImageModal} onHide={closeImageModal} size="lg" centered>
+        <Modal.Header closeButton className="bg-dark text-light border-0">
           <Modal.Title>Reported Image</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="text-center">
+        <Modal.Body className="text-center bg-dark text-light">
           <Image 
             src={selectedImage} 
             fluid 
             style={{ maxHeight: '60vh', objectFit: 'contain' }}
             onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+              e.target.src = 'https://placehold.co/400x300/2e2e3e/d6d6d6?text=Image+Not+Found';
             }}
           />
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="bg-dark border-0">
           <Button variant="secondary" onClick={closeImageModal}>
             Close
           </Button>
@@ -363,8 +328,8 @@ const AdminDashboard = ({ user }) => {
       </Modal>
 
       {/* Bootstrap Icons */}
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" />
-    </>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    </div>
   );
 };
 

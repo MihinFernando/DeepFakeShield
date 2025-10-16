@@ -24,27 +24,35 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
+        // Assume default role is 'user' until proven otherwise
+        let determinedRole = 'user'; 
+        
         // Check user role in Firestore
         try {
+          // NOTE: We rely on the Firestore library instances (db) being stable
           const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          
           if (userDoc.exists()) {
-            setUserRole(userDoc.data().role || 'user');
-          } else {
-            // If no user document exists, set default role
-            setUserRole('user');
+            const data = userDoc.data();
+            
+            // Safety check: ensure role is a string and valid
+            if (typeof data.role === 'string') {
+              determinedRole = data.role;
+            }
           }
         } catch (error) {
-          console.error('Error fetching user role:', error);
-          setUserRole('user');
+          console.error("Error fetching user role:", error);
         }
+        
         setUser(currentUser);
+        setUserRole(determinedRole);
       } else {
         setUser(null);
         setUserRole('user');
       }
       setLoading(false);
     });
-    
+
     return () => unsubscribe();
   }, []);
 
@@ -71,12 +79,17 @@ function App() {
           <Route path="/" element={<HomePage user={user} userRole={userRole} />} />
           <Route 
             path="/auth" 
+            // If user exists, navigate to dashboard
             element={user ? <Navigate to="/dashboard" /> : <AuthPage />} 
           />
           <Route 
             path="/dashboard" 
             element={user ? (
-              userRole === 'admin' ? <AdminDashboard user={user} /> : <Dashboard user={user} />
+              // This is the role-based routing check
+              userRole === 'admin' 
+              // ⚠️ Passing userRole to AdminDashboard for strict pre-fetch check
+              ? <AdminDashboard user={user} userRole={userRole} /> 
+              : <Dashboard user={user} />
             ) : <Navigate to="/auth" />} 
           />
           <Route path="/faq" element={<FAQ />} />
@@ -85,7 +98,6 @@ function App() {
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </div>
