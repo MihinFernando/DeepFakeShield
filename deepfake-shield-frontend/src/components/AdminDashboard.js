@@ -1,11 +1,9 @@
 // src/components/AdminDashboard.js
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-// Removed 'orderBy' as it was unused
-import { collection, getDocs, query, limit } from 'firebase/firestore'; 
+import { collection, getDocs } from 'firebase/firestore';
 import { Container, Row, Col, Card, Button, Navbar, Nav, Spinner, Table, Badge, Alert, Image, Modal } from 'react-bootstrap';
-// Removed unused 'useNavigate' import
 
 const REPORTS_COLLECTION = 'reports'; 
 
@@ -16,41 +14,25 @@ const AdminDashboard = ({ user, userRole }) => {
   const [error, setError] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
-  // Removed 'const navigate = useNavigate();' as it was unused
+  // Removed navigate as it's not used in this component after the last refactor
 
   // Your Flask backend URL - CHANGE THIS IF YOUR BACKEND RUNS ON DIFFERENT PORT
   const BACKEND_URL = 'http://localhost:5000';
 
-  // Wrapping fetchAdminData in useCallback to fix the useEffect dependency warning
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
     try {
-      // ⚠️ IMPORTANT: Perform a quick check to see if the user is available and logged in
       if (!auth.currentUser || !user?.uid) {
-         throw new Error("User not authenticated or UID missing when fetchAdminData ran.");
+         // This warning is usually enough, App.js should prevent this access
+         console.warn("Attempted to fetch data without authenticated user.");
+         return; 
       }
 
       setError('');
       
-      // Get total reports count 
       const reportsCollectionRef = collection(db, REPORTS_COLLECTION);
       const reportsSnapshot = await getDocs(reportsCollectionRef);
-      const totalReports = reportsSnapshot.size;
       
-      // Get recent reports (limit to 10) - The query variable is still needed
-      const q = query(reportsCollectionRef, limit(10));
-      // Removed 'const recentReportsSnapshot = ...' as it was unused. The call is still needed 
-      // here to ensure the rules allow it, but the data processing uses 'reportsSnapshot'.
-      await getDocs(q); 
-      
-      // --- Processing Logic remains the same ---
-      let todayReports = 0;
-      let totalFakeReports = 0;
-      let totalRealReports = 0;
-      
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
       const allReports = reportsSnapshot.docs.map(doc => {
           const data = doc.data();
           const timestampField = data.createdAt; 
@@ -60,67 +42,85 @@ const AdminDashboard = ({ user, userRole }) => {
              timestamp = timestampField.toDate(); 
           } else if (timestampField instanceof Date) {
              timestamp = timestampField;
+          } else if (timestampField && timestampField.seconds) { // Handle Firestore Timestamp objects directly
+             timestamp = new Date(timestampField.seconds * 1000);
           } else if (timestampField) {
              timestamp = new Date(timestampField);
           } else {
              timestamp = new Date(0); 
           }
           
-          if (timestamp >= todayStart) {
-              todayReports++;
-          }
-          if (data.result === 'FAKE') {
-              totalFakeReports++;
-          } else if (data.result === 'REAL') {
-              totalRealReports++;
-          }
-          
-          return { id: doc.id, ...data, timestamp: timestamp };
+          return { 
+            id: doc.id, 
+            ...data, 
+            timestamp: timestamp,
+            // Prioritize 'decision' as the final result, then 'result', falling back to 'N/A'
+            // Ensure result is a string before lowercasing it for comparison
+            result: String(data.decision || data.result || 'N/A').toLowerCase(), 
+            // Use 'imageUrl' for the image link, falling back to older 'scanUrl'
+            imageUrl: data.imageUrl || data.scanUrl || null 
+          };
       });
+
+      const totalLifetimeScans = allReports.length;
+
+      // Calculate Average Daily Scans
+      let averageDailyScans = 0;
+      if (totalLifetimeScans > 0) {
+          const firstScanTimestamp = allReports.reduce((minTimestamp, report) => 
+              report.timestamp.getTime() < minTimestamp ? report.timestamp.getTime() : minTimestamp, new Date().getTime());
+          
+          // Calculate difference in milliseconds
+          const timeDifferenceMs = new Date().getTime() - firstScanTimestamp;
+          const daysSinceFirstScan = timeDifferenceMs / (1000 * 60 * 60 * 24);
+          
+          if (daysSinceFirstScan >= 1) { 
+              averageDailyScans = (totalLifetimeScans / daysSinceFirstScan).toFixed(2);
+          } else {
+              averageDailyScans = totalLifetimeScans; 
+          }
+      }
       
       setStats({
-        totalReports: totalReports,
-        todayReports: todayReports,
-        totalFakeReports: totalFakeReports,
-        totalRealReports: totalRealReports,
+        totalLifetimeScans: totalLifetimeScans,
+        averageDailyScans: parseFloat(averageDailyScans),
         backendStatus: BACKEND_URL ? 'Connected' : 'Offline'
       });
       
       // Sort recent reports by timestamp descending in memory
       const sortedReports = allReports.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       
-      // Take the top 10 recent reports for display
       setRecentReports(sortedReports.slice(0, 10));
 
     } catch (err) {
       console.error('--- CRITICAL FIRESTORE ERROR IN ADMIN DASHBOARD ---');
-      console.error('Check your Firebase Security Rules! The rule is denying the request to read from a collection.');
       console.error('Full Error Object:', err); 
       
       setError('Failed to fetch data. Permissions denied by Firebase Rules. Check console for details.');
       
+      // Set stats to zeroed default to prevent rendering crashes
       setStats({
-        totalReports: 0,
-        todayReports: 0,
-        totalFakeReports: 0,
-        totalRealReports: 0,
+        totalLifetimeScans: 0,
+        averageDailyScans: 0,
         backendStatus: BACKEND_URL ? 'Connected' : 'Offline'
       });
     } finally {
       setLoading(false);
     }
-  }, [user, userRole]); // Dependencies for useCallback
+  }, [user]); // Removed userRole from dependencies as it's used for the check outside the fetch
 
   useEffect(() => {
-    // CRITICAL FIX: Ensures fetchAdminData only runs when the role is confirmed 'admin'
+    // Only fetch data if the user object is available and the role is confirmed 'admin'
     if (user && user.uid && userRole === 'admin') { 
       fetchAdminData();
     } else if (user && userRole !== 'admin') {
-      console.warn("Attempted to load Admin Dashboard with non-admin role:", userRole);
+      // If user exists but is not admin, show access denied
       setError("Access Denied: You do not have administrator privileges.");
       setLoading(false);
     }
-  }, [user, userRole, fetchAdminData]); // fetchAdminData included now that it's memoized
+    // Note: The logic for handling user/userRole updates is now more robustly handled 
+    // in App.js and the fetchAdminData dependency array.
+  }, [user, userRole, fetchAdminData]); 
 
   const handleLogout = async () => {
     try {
@@ -130,8 +130,8 @@ const AdminDashboard = ({ user, userRole }) => {
     }
   };
   
-  const openImageModal = (image) => {
-    setSelectedImage(image);
+  const openImageModal = (imageUrl) => {
+    setSelectedImage(imageUrl);
     setShowImageModal(true);
   };
 
@@ -140,8 +140,26 @@ const AdminDashboard = ({ user, userRole }) => {
     setSelectedImage('');
   };
 
+  const getResultBadgeVariant = (result) => {
+    if (!result || result.toLowerCase() === 'n/a') return 'secondary';
+    if (result.toLowerCase().includes('fake')) return 'danger';
+    if (result.toLowerCase().includes('real')) return 'success';
+    return 'warning'; // For "Uncertain" or other results
+  };
+
   const dashboardContent = (
     <Container fluid className="py-4">
+      {/* --- TEMPORARY UID DISPLAY (Keep this until it works) --- */}
+      {/* Since the data is now loading, you can safely remove this block if you're confident! */}
+      {/* <div className="mb-3 p-3 bg-danger text-white rounded shadow-lg">
+        <strong className="text-warning">ADMIN UID:</strong> 
+        <code className="text-white fs-5 ms-3 select-all">{user?.uid}</code>
+        <p className="mt-1 mb-0 text-xs">
+          (This code must be removed after the dashboard is fixed.)
+        </p>
+      </div> */}
+      {/* ----------------------------- */}
+
       <h2 className="text-info mb-4">Admin Dashboard</h2>
       
       <Row className="mb-4">
@@ -153,45 +171,45 @@ const AdminDashboard = ({ user, userRole }) => {
       {/* Stats Cards */}
       {stats && (
         <Row className="g-4 mb-5">
-          {/* Card 1: Total Reports */}
+          {/* Card 1: Total Lifetime Scans */}
           <Col lg={3} md={6}>
             <Card className="shadow-lg h-100" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
               <Card.Body>
                 <div className="d-flex align-items-center">
-                  <i className="bi bi-file-earmark-bar-graph fs-3 text-info me-3"></i>
+                  <i className="bi bi-bar-chart-line fs-3 text-info me-3"></i> 
                   <div>
-                    <Card.Title className="text-info mb-0">Total Reports</Card.Title>
-                    <Card.Text className="fs-2 fw-bold text-light">{stats.totalReports}</Card.Text>
+                    <Card.Title className="text-info mb-0">Total Lifetime Scans</Card.Title>
+                    <Card.Text className="fs-2 fw-bold text-light">{stats.totalLifetimeScans}</Card.Text>
                   </div>
                 </div>
               </Card.Body>
             </Card>
           </Col>
           
-          {/* Card 2: Reports Today */}
+          {/* Card 2: Average Daily Scans */}
           <Col lg={3} md={6}>
             <Card className="shadow-lg h-100" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
               <Card.Body>
                 <div className="d-flex align-items-center">
-                  <i className="bi bi-calendar-check fs-3 text-success me-3"></i>
+                  <i className="bi bi-graph-up fs-3 text-success me-3"></i> 
                   <div>
-                    <Card.Title className="text-success mb-0">Reports Today</Card.Title>
-                    <Card.Text className="fs-2 fw-bold text-light">{stats.todayReports}</Card.Text>
+                    <Card.Title className="text-success mb-0">Avg. Daily Scans</Card.Title>
+                    <Card.Text className="fs-2 fw-bold text-light">{stats.averageDailyScans}</Card.Text>
                   </div>
                 </div>
               </Card.Body>
             </Card>
           </Col>
 
-          {/* Card 3: Fake Reports */}
+          {/* Card 3: Placeholder (can be customized later) */}
           <Col lg={3} md={6}>
             <Card className="shadow-lg h-100" style={{ backgroundColor: '#2e2e3e', border: 'none' }}>
               <Card.Body>
                 <div className="d-flex align-items-center">
-                  <i className="bi bi-x-octagon-fill fs-3 text-warning me-3"></i>
+                  <i className="bi bi-clock-history fs-3 text-warning me-3"></i>
                   <div>
-                    <Card.Title className="text-warning mb-0">Fake Reports</Card.Title>
-                    <Card.Text className="fs-2 fw-bold text-light">{stats.totalFakeReports}</Card.Text>
+                    <Card.Title className="text-warning mb-0">Average Processing Time</Card.Title>
+                    <Card.Text className="fs-2 fw-bold text-light">~5 sec</Card.Text>
                   </div>
                 </div>
               </Card.Body>
@@ -248,22 +266,29 @@ const AdminDashboard = ({ user, userRole }) => {
                 <tr key={report.id}>
                   <td>{report.id.substring(0, 8)}...</td>
                   <td>
-                    <Badge bg={report.result === 'FAKE' ? 'danger' : 'success'}>
-                      {report.result}
+                    {/* Safe access to result, converts to uppercase for display */}
+                    <Badge bg={getResultBadgeVariant(report.result)}>
+                      {report.result ? report.result.toUpperCase() : 'N/A'} 
                     </Badge>
                   </td>
                   <td>{report.sourceType || 'N/A'}</td>
                   <td>{report.userId ? report.userId.substring(0, 8) + '...' : 'Anonymous'}</td>
                   <td>{report.timestamp.toLocaleString()}</td>
                   <td>
-                    <Button 
-                      variant="outline-info" 
-                      size="sm"
-                      onClick={() => openImageModal(report.scanUrl)}
-                      disabled={!report.scanUrl}
-                    >
-                      View Image
-                    </Button>
+                    {/* Check for imageUrl existence to enable the button */}
+                    {report.imageUrl ? (
+                      <Button 
+                        variant="outline-info" 
+                        size="sm"
+                        onClick={() => openImageModal(report.imageUrl)} // Pass the image URL
+                      >
+                        View Image
+                      </Button>
+                    ) : (
+                      <Button variant="outline-secondary" size="sm" disabled>
+                        No Image
+                      </Button>
+                    )}
                   </td>
                 </tr>
               )) : (
@@ -288,6 +313,7 @@ const AdminDashboard = ({ user, userRole }) => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
+              {/* Note: I'm leaving the logout button here, but the actual navigation away is handled by App.js's auth listener */}
               <Nav.Link onClick={handleLogout} className="text-danger">
                 <i className="bi bi-box-arrow-right me-2"></i>Logout
               </Nav.Link>
@@ -311,14 +337,19 @@ const AdminDashboard = ({ user, userRole }) => {
           <Modal.Title>Reported Image</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center bg-dark text-light">
-          <Image 
-            src={selectedImage} 
-            fluid 
-            style={{ maxHeight: '60vh', objectFit: 'contain' }}
-            onError={(e) => {
-              e.target.src = 'https://placehold.co/400x300/2e2e3e/d6d6d6?text=Image+Not+Found';
-            }}
-          />
+          {selectedImage ? (
+            <Image 
+              src={selectedImage} 
+              fluid 
+              style={{ maxHeight: '60vh', objectFit: 'contain' }}
+              onError={(e) => {
+                e.target.src = 'https://placehold.co/400x300/2e2e3e/d6d6d6?text=Image+Not+Found+or+Broken+Link';
+                e.target.style.maxHeight = '300px';
+              }}
+            />
+          ) : (
+            <p className="text-danger">No valid image URL provided for this report.</p>
+          )}
         </Modal.Body>
         <Modal.Footer className="bg-dark border-0">
           <Button variant="secondary" onClick={closeImageModal}>
