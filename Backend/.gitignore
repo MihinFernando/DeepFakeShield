@@ -1,0 +1,15 @@
+#Python environment and build files
+
+.venv/
+pycache/
+
+#CRITICAL SECURITY: IGNORE ALL PRIVATE KEYS AND ENVIRONMENT FILES
+
+#This stops Google from finding and disabling your key!
+
+firebase/serviceAccountKey.json
+*.env
+
+#Ignore local Flask uploads/temp files
+
+report_uploads/
