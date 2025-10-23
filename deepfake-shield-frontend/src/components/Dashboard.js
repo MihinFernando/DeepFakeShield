@@ -32,7 +32,7 @@ const Dashboard = ({ user }) => {
         method: 'POST',
         body: formData,
       });
-      if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+  if (!res.ok) throw new Error(`Server returned status ${res.status}`);
       const data = await res.json();
       setResult(data);
       setHistoryRefresh((v) => v + 1);
@@ -62,8 +62,8 @@ const Dashboard = ({ user }) => {
       ctx.drawImage(img, 0, 0);
 
       const text = 'AI GENERATED';
-      const fontSize = Math.floor(Math.min(canvas.width, canvas.height) / 8);
-      ctx.font = `${fontSize}px sans-serif`;
+  const fontSize = Math.floor(Math.min(canvas.width, canvas.height) / 8);
+  ctx.font = `${fontSize}px sans-serif`;
       ctx.fillStyle = 'rgba(255, 45, 117, 0.25)';
       ctx.strokeStyle = 'rgba(255,255,255,0.35)';
       ctx.lineWidth = Math.max(6, Math.floor(fontSize / 12));
@@ -164,30 +164,7 @@ const Dashboard = ({ user }) => {
     );
   };
 
-  return (
-    <>
-      {/* Navigation Bar */}
-      <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
-        <Navbar.Brand href="#home" className="text-glow">
-          DeepFakeShield
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
-          <Nav>
-            <Button 
-              variant="outline-light" 
-              className="me-2"
-              onClick={() => navigate('/')}
-            >
-              Home
-            </Button>
-            <Button variant="outline-info" onClick={() => signOut(auth)}>
-              Logout
-            </Button>
-          </Nav>
-        </Navbar.Collapse>
-      </Navbar>
-
+  const renderDashboardContent = () => (
       <Container className="py-5 text-light d-flex flex-column align-items-center">
         <Card className="custom-card p-4">
           <h2 className="text-glow text-center mb-2">DeepFakeShield</h2>
@@ -218,10 +195,41 @@ const Dashboard = ({ user }) => {
           </div>
         </Card>
 
-        <div className="mt-5 w-100">
+      {/* --- Scan History Section --- */}
+      <div className="row mt-5 pt-5 justify-content-center">
+        <div className="col-lg-12"> 
+          <h2 className="text-center mb-4 text-secondary">Scan History</h2>
           <History user={user} refreshKey={historyRefresh} />
         </div>
-      </Container>
+      </div>
+    </Container>
+  );
+
+  return (
+    <>
+      {/* Navigation Bar */}
+      <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
+        <Navbar.Brand href="#home" className="text-glow">
+          DeepFakeShield
+        </Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
+          <Nav>
+            <Button 
+              variant="outline-light" 
+              className="me-2"
+              onClick={() => navigate('/')}
+            >
+              Home
+            </Button>
+            <Button variant="outline-info" onClick={() => signOut(auth)}>
+              Logout
+            </Button>
+          </Nav>
+        </Navbar.Collapse>
+      </Navbar>
+
+      {renderDashboardContent()}
 
       {/* Footer */}
       <footer className="bg-dark text-light py-4 mt-5">
